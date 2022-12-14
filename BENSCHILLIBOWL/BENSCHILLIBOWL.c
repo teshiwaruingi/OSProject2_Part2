@@ -58,20 +58,43 @@ void CloseRestaurant(BENSCHILLIBOWL *bcb) {
 /* add an order to the back of queue */
 // will be using the pthread_mutex_lock/unlock functions for acquire/release,
 // pthread_cond_signal() for cond.signal(), pthread_cond_wait() for wait
+// define a function to add an order to a restaurant
 int AddOrder(BENSCHILLIBOWL *bcb, Order *order) {
-  pthread_mutex_lock(&(bcb->mutex)); // acquire lock
-  while (IsFull(bcb)) {
-    pthread_cond_wait(&(bcb->can_add_orders), &(bcb->mutex));
-  }
-  order->order_number =
-      bcb->next_order_number; // populating the order number of the order
-  AddOrderToBack(&(bcb->orders), order); // add/enqueue order to back
-  bcb->current_size += 1;                // increment size of restaurant
-  bcb->next_order_number += 1;           // increment next order number
-  pthread_cond_signal(&(bcb->can_get_orders));
-  pthread_mutex_unlock(&(bcb->mutex)); // release lock
-  return bcb->next_order_number;       // return the order number
+  // acquire the mutex lock to ensure exclusive access to the restaurant
+  pthread_mutex_lock(&(bcb->mutex));
+
+  // if the restaurant is full, wait until a customer has picked up their order
+  // acquire the mutex lock to ensure exclusive access to the restaurant
+pthread_mutex_lock(&(bcb->mutex));
+
+// if the restaurant is full, wait until a customer has picked up their order
+while (IsFull(bcb)) {
+  pthread_cond_wait(&(bcb->can_add_orders), &(bcb->mutex));
 }
+
+// assign the order a unique order number
+order->order_number = bcb->next_order_number;
+
+// add the order to the back of the queue
+AddOrderToBack(&(bcb->orders), order);
+
+// increment the size of the restaurant (number of orders in queue)
+bcb->current_size += 1;
+
+// increment the next order number
+bcb->next_order_number += 1;
+
+// signal that a customer can pick up their order
+pthread_cond_signal(&(bcb->can_get_orders));
+
+// release the mutex lock
+pthread_mutex_unlock(&(bcb->mutex));
+
+
+  // return the order number assigned to the new order
+  return bcb->next_order_number;
+}
+
 
 /* remove an order from the queue */
 Order *GetOrder(BENSCHILLIBOWL *bcb) {
