@@ -23,21 +23,40 @@ BENSCHILLIBOWL *bcb;
  *  - populate the order with their menu item and their customer ID.
  *  - add their order to the restaurant.
  */
+// define a function to simulate the behavior of a customer
 void *BENSCHILLIBOWLCustomer(void *tid) {
+  // get the customer's ID from the thread ID
   int customer_id = (int)(long)tid;
+
+  // create a variable to store the customer's order
   Order *my_order;
-  int i;
+
+  // loop for the number of orders each customer makes
   for (i = 0; i < ORDERS_PER_CUSTOMER; i++) {
+    // allocate memory for the new order
     my_order = malloc(sizeof(Order));
+
+    // initialize the next pointer to NULL
     my_order->next = NULL;
+
+    // choose a random menu item for the order
     my_order->menu_item = PickRandomMenuItem();
+
+    // set the customer ID for the order
     my_order->customer_id = customer_id;
+
+    // add the order to the restaurant
     AddOrder(bcb, my_order);
+
+    // print a message indicating that the customer has requested an order
     printf("Customer %d requested order #%d: %s\n", my_order->customer_id,
            my_order->order_number, my_order->menu_item);
   }
+
+  // return NULL to indicate that the thread has completed
   return NULL;
 }
+
 
 /**
  * Thread function that represents a cook in the restaurant. A cook should:
@@ -78,25 +97,37 @@ int main() {
   pthread_t cook_threads[NUM_COOKS];
   pthread_t customer_threads[NUM_CUSTOMERS];
 
-  for (i = 0; i < NUM_CUSTOMERS; i++) {
-    customer_ids[i] = i + 1;
-    pthread_create(&customer_threads[i], NULL, BENSCHILLIBOWLCustomer,
-                   &(customer_ids[i]));
-  }
+  // create threads for each customer
+for (i = 0; i < NUM_CUSTOMERS; i++) {
+  // assign each customer a unique ID
+  customer_ids[i] = i + 1;
+  // create a thread for the customer and pass in the customer's ID
+  pthread_create(&customer_threads[i], NULL, BENSCHILLIBOWLCustomer,
+                 &(customer_ids[i]));
+}
 
-  for (i = 0; i < NUM_COOKS; i++) {
-    cook_ids[i] = i + 1;
-    pthread_create(&cook_threads[i], NULL, BENSCHILLIBOWLCook, &(cook_ids[i]));
-  }
+// create threads for each cook
+for (i = 0; i < NUM_COOKS; i++) {
+  // assign each cook a unique ID
+  cook_ids[i] = i + 1;
+  // create a thread for the cook and pass in the cook's ID
+  pthread_create(&cook_threads[i], NULL, BENSCHILLIBOWLCook, &(cook_ids[i]));
+}
 
-  for (j = 0; j < NUM_CUSTOMERS; j++) {
-    pthread_join(customer_threads[j], NULL);
-  }
+// wait for all customer threads to complete
+for (j = 0; j < NUM_CUSTOMERS; j++) {
+  pthread_join(customer_threads[j], NULL);
+}
 
-  for (j = 0; j < NUM_COOKS; j++) {
-    pthread_join(cook_threads[j], NULL);
-  }
+// wait for all cook threads to complete
+for (j = 0; j < NUM_COOKS; j++) {
+  pthread_join(cook_threads[j], NULL);
+}
 
-  CloseRestaurant(bcb);
-  return 0;
+// close the restaurant
+CloseRestaurant(bcb);
+
+// return 0 to indicate success
+return 0;
+
 }
